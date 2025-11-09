@@ -1,0 +1,20 @@
+---
+# Configuración de radvd para IPv6
+
+- name: "Instalar radvd"
+  dnf:
+    name: radvd
+    state: present
+
+- name: "Configurar radvd.conf"
+  template:
+    src: radvd.conf.j2
+    dest: /etc/radvd.conf
+    backup: yes
+  notify: restart radvd
+
+- name: "Habilitar y iniciar radvd"
+  systemd:
+    name: radvd
+    enabled: yes
+    state: started

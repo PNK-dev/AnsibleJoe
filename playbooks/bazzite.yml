@@ -1,0 +1,61 @@
+---
+- name: "Bazzite - Configuración completa del sistema desktop"
+  hosts: bazzite
+  gather_facts: yes
+  become: yes
+  vars_files:
+    - ../config/proyecto.yml
+  collections:
+    - ansible.posix
+    - community.general
+
+  pre_tasks:
+    - name: "Verificar conectividad con Bazzite"
+      ping:
+      tags: [always]
+
+    - name: "Obtener información del sistema"
+      setup:
+        gather_subset:
+          - "!all"
+          - "!min"
+          - "distribution"
+          - "os_family"
+      tags: [always]
+
+    - name: "Mapear variables desde config/proyecto.yml si existen"
+      set_fact:
+        sddm_theme: "{{ sddm.tema | default(sddm_theme | default('breeze')) }}"
+        sddm_auto_login: "{{ sddm.auto_login | default(sddm_auto_login | default(false)) }}"
+        sddm_auto_login_user: "{{ sddm.auto_login_user | default('gamer') if (sddm.auto_login | default(false)) else (sddm_auto_login_user | default('')) }}"
+        usuarios_ocultos: "{{ sddm.usuarios_ocultos | default(usuarios_ocultos | default(['root','bin','daemon'])) }}"
+        software_rpm: "{{ software_bazzite.rpm_packages | default(software_rpm | default([])) }}"
+        vm_swappiness: "{{ optimizacion.vm_swappiness | default(vm_swappiness | default(10)) }}"
+      when: sddm is defined or software_bazzite is defined or optimizacion is defined
+      tags: [always]
+
+  roles:
+    - { role: bazzite/usuarios_bazzite, tags: [usuarios, users] }
+    #- { role: bazzite/software_bazzite, tags: [software, packages] }
+    - { role: bazzite/ocultar_usuarios, tags: [ocultar_usuarios, sddm] }
+    - { role: bazzite/sddm_config, tags: [sddm, display] }
+    #- {
+    #    role: bazzite/mantenimiento_bazzite,
+    #    tags: [mantenimiento, maintenance],
+     # }
+    #- { role: bazzite/optimizacion_bazzite, tags: [optimizacion, performance] }
+    - { role: bazzite/actualiza_bazzite, tags: [actualizaciones, updates] }
+
+  post_tasks:
+    - name: "Verificar usuarios creados"
+      getent:
+        database: passwd
+      tags: [verify]
+
+    - name: "Mostrar resumen de configuración"
+      debug:
+        msg:
+          - "Sistema: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Usuarios configurados: {{ ansible_facts.getent_passwd.keys() | list | length }}"
+          - "Configuración completada exitosamente"
+      tags: [verify]

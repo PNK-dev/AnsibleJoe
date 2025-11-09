@@ -1,0 +1,17 @@
+---
+# Variables específicas para Rocky Linux
+
+# Interfaz única para WAN y LAN según tu indicación
+firewall_wan_interface: "ens37"
+firewall_lan_interface: "ens37"
+
+# IPv6 / DHCPv6
+firewall_ipv6_lan_prefix: "2025:db8:10::/64"
+dhcpv6_interface: "ens37"
+dhcpv6_subnet: "2025:db8:10::/64"
+dhcpv6_pool: "2025:db8:10::100-2025:db8:10::200"
+dhcpv6_dns_servers:
+  - "2025:db8:10::1"
+
+# Mantener dominio DNS ya global en inventories/group_vars/all.yml
+# network_domain: "proyecto-so.local"

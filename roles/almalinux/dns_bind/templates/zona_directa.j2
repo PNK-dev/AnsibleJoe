@@ -1,0 +1,46 @@
+;
+; Zona DNS directa para {{ network_domain }}
+; Proyecto de Sistemas Operativos
+; Generado automáticamente: {{ ansible_date_time.date }}
+;
+
+$TTL    604800
+@       IN      SOA     servidor.{{ network_domain }}. admin.{{ network_domain }}. (
+                        {{ ansible_date_time.epoch }}  ; Serial
+                        604800                          ; Refresh
+                        86400                           ; Retry
+                        2419200                         ; Expire
+                        604800 )                        ; Negative Cache TTL
+
+; Servidores de nombres
+@       IN      NS      servidor.{{ network_domain }}.
+
+; Registros A (IPv4) — omitidos en despliegue solo IPv6
+
+; Registros AAAA (IPv6)
+servidor        IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
+almalinux       IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
+web             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
+ftp             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
+dns             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
+
+; Registros CNAME (alias)
+www             IN      CNAME   web.{{ network_domain }}.
+mail            IN      CNAME   servidor.{{ network_domain }}.
+
+; Registros MX (correo)
+@               IN      MX      10      mail.{{ network_domain }}.
+
+; Registros TXT (información)
+@               IN      TXT     "Proyecto SO - AlmaLinux + Bazzite"
+@               IN      TXT     "v=spf1 mx ~all"
+
+; Registros SRV (servicios)
+_http._tcp      IN      SRV     0 5 80  web.{{ network_domain }}.
+_ftp._tcp       IN      SRV     0 5 21  ftp.{{ network_domain }}.
+
+; Hosts adicionales del proyecto
+bazzite1        IN      A       192.168.1.100
+bazzite2        IN      A       192.168.1.101
+desktop1        IN      CNAME   bazzite1.{{ network_domain }}.
+desktop2        IN      CNAME   bazzite2.{{ network_domain }}.

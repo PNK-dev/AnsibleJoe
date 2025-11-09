@@ -1,0 +1,193 @@
+#!/bin/bash
+# Script de monitoreo del firewall - Proyecto SO
+# Generado automáticamente por Ansible
+
+LOG_FILE="/var/log/firewall-monitor.log"
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Función para logging
+log_message() {
+    echo "[$DATE] $1" >> $LOG_FILE
+}
+
+# Función para mostrar estado del firewall
+show_firewall_status() {
+    echo "🔥 ESTADO DEL FIREWALL - PROYECTO SO"
+    echo "===================================="
+    echo "Fecha: $DATE"
+    echo "Servidor: {{ ansible_hostname }}"
+    echo ""
+    
+    echo "📊 Estado de firewalld:"
+    systemctl is-active firewalld
+    echo ""
+    
+    echo "🌐 Zona activa:"
+    firewall-cmd --get-active-zones
+    echo ""
+    
+    echo "🔓 Servicios permitidos:"
+    firewall-cmd --list-services
+    echo ""
+    
+    echo "🚪 Puertos abiertos:"
+    firewall-cmd --list-ports
+    echo ""
+    
+    echo "📋 Reglas ricas:"
+    firewall-cmd --list-rich-rules
+    echo ""
+}
+
+# Función para verificar servicios críticos
+check_critical_services() {
+    echo "🔍 VERIFICACIÓN DE SERVICIOS CRÍTICOS"
+    echo "====================================="
+    
+    services=("httpd" "vsftpd" "named" "sshd" "fail2ban")
+    
+    for service in "${services[@]}"; do
+        if systemctl is-active --quiet $service; then
+            echo "✅ $service: Activo"
+            log_message "Servicio $service está activo"
+        else
+            echo "❌ $service: Inactivo"
+            log_message "ALERTA: Servicio $service está inactivo"
+        fi
+    done
+    echo ""
+}
+
+# Función para mostrar conexiones activas
+show_active_connections() {
+    echo "🌐 CONEXIONES ACTIVAS"
+    echo "===================="
+    echo "Conexiones HTTP (puerto 80):"
+    netstat -an | grep :80 | grep ESTABLISHED | wc -l
+    
+    echo "Conexiones HTTPS (puerto 443):"
+    netstat -an | grep :443 | grep ESTABLISHED | wc -l
+    
+    echo "Conexiones FTP (puerto 21):"
+    netstat -an | grep :21 | grep ESTABLISHED | wc -l
+    
+    echo "Conexiones SSH (puerto 22):"
+    netstat -an | grep :22 | grep ESTABLISHED | wc -l
+    echo ""
+}
+
+# Función para mostrar estadísticas de fail2ban
+show_fail2ban_stats() {
+    echo "🛡️  ESTADÍSTICAS DE FAIL2BAN"
+    echo "============================"
+    
+    if systemctl is-active --quiet fail2ban; then
+        echo "Estado: ✅ Activo"
+        echo ""
+        echo "Jails activas:"
+        fail2ban-client status | grep "Jail list:" | cut -d: -f2
+        echo ""
+        
+        echo "IPs baneadas actualmente:"
+        for jail in $(fail2ban-client status | grep "Jail list:" | cut -d: -f2 | tr ',' ' '); do
+            jail=$(echo $jail | tr -d ' ')
+            banned=$(fail2ban-client status $jail 2>/dev/null | grep "Banned IP list:" | cut -d: -f2)
+            if [ -n "$banned" ]; then
+                echo "  $jail: $banned"
+            fi
+        done
+    else
+        echo "Estado: ❌ Inactivo"
+        log_message "ALERTA: fail2ban está inactivo"
+    fi
+    echo ""
+}
+
+# Función para verificar logs de seguridad
+check_security_logs() {
+    echo "📋 EVENTOS DE SEGURIDAD RECIENTES"
+    echo "================================="
+    
+    echo "Últimos intentos de SSH fallidos:"
+    journalctl -u sshd --since "1 hour ago" | grep "Failed password" | tail -5
+    echo ""
+    
+    echo "Últimas conexiones HTTP sospechosas:"
+    tail -10 /var/log/httpd/access_log | grep -E "(404|403|500)" | tail -3
+    echo ""
+    
+    echo "Actividad de fail2ban:"
+    tail -5 /var/log/fail2ban.log 2>/dev/null || echo "No hay logs de fail2ban"
+    echo ""
+}
+
+# Función para generar reporte de seguridad
+generate_security_report() {
+    REPORT_FILE="/var/log/security-report-$(date +%Y%m%d-%H%M).txt"
+    
+    {
+        show_firewall_status
+        check_critical_services
+        show_active_connections
+        show_fail2ban_stats
+        check_security_logs
+    } > $REPORT_FILE
+    
+    echo "📄 Reporte generado: $REPORT_FILE"
+    log_message "Reporte de seguridad generado: $REPORT_FILE"
+}
+
+# Función para mostrar ayuda
+show_help() {
+    echo "🔧 MONITOR DE FIREWALL - PROYECTO SO"
+    echo "===================================="
+    echo "Uso: $0 [opción]"
+    echo ""
+    echo "Opciones:"
+    echo "  status      - Mostrar estado del firewall"
+    echo "  services    - Verificar servicios críticos"
+    echo "  connections - Mostrar conexiones activas"
+    echo "  fail2ban    - Estadísticas de fail2ban"
+    echo "  logs        - Eventos de seguridad recientes"
+    echo "  report      - Generar reporte completo"
+    echo "  help        - Mostrar esta ayuda"
+    echo ""
+    echo "Sin parámetros muestra un resumen completo"
+}
+
+# Función principal
+main() {
+    case "${1:-all}" in
+        "status")
+            show_firewall_status
+            ;;
+        "services")
+            check_critical_services
+            ;;
+        "connections")
+            show_active_connections
+            ;;
+        "fail2ban")
+            show_fail2ban_stats
+            ;;
+        "logs")
+            check_security_logs
+            ;;
+        "report")
+            generate_security_report
+            ;;
+        "help")
+            show_help
+            ;;
+        "all"|*)
+            show_firewall_status
+            check_critical_services
+            show_active_connections
+            show_fail2ban_stats
+            check_security_logs
+            ;;
+    esac
+}
+
+# Ejecutar función principal
+main "$@"

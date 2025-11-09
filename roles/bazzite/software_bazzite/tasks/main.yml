@@ -1,0 +1,77 @@
+---
+# Instalación de software en Bazzite
+
+- name: "Verificar si Flatpak está disponible"
+  command: which flatpak
+  register: flatpak_available
+  failed_when: false
+  changed_when: false
+
+- name: "Actualizar repositorios Flatpak"
+  command: flatpak update --noninteractive
+  when: flatpak_available.rc == 0
+  become_user: "{{ item }}"
+  loop: "{{ usuarios_creados | default([]) }}"
+  ignore_errors: yes
+
+- name: "Instalar aplicaciones Flatpak para cada usuario"
+  flatpak:
+    name: "{{ item.1 }}"
+    state: present
+    method: user
+  become_user: "{{ item.0 }}"
+  loop: "{{ usuarios_creados | default([]) | product(software_flatpak | default([])) | list }}"
+  when: flatpak_available.rc == 0
+  ignore_errors: yes
+
+- name: "Instalar software común con rpm-ostree"
+  command: rpm-ostree install {{ software_rpm | default([]) | join(' ') }}
+  register: rpm_ostree_result
+  changed_when: "'No change' not in rpm_ostree_result.stdout"
+  when: software_rpm | default([]) | length > 0
+  ignore_errors: yes
+
+- name: "Verificar si se necesita reinicio después de rpm-ostree"
+  command: rpm-ostree status
+  register: ostree_status
+  changed_when: false
+
+- name: "Mostrar estado de rpm-ostree"
+  debug:
+    msg: "{{ ostree_status.stdout_lines }}"
+  when: ostree_status is defined
+
+- name: "Crear directorio de aplicaciones personalizadas"
+  file:
+    path: "/home/{{ item }}/Applications"
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: "0755"
+  loop: "{{ usuarios_creados | default([]) }}"
+
+- name: "Crear script de información del sistema"
+  template:
+    src: sistema-info.sh.j2
+    dest: "/home/{{ item }}/Scripts/sistema-info.sh"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: "0755"
+  loop: "{{ usuarios_creados | default([]) }}"
+
+- name: "Configurar alias para aplicaciones"
+  lineinfile:
+    path: "/home/{{ combo.0 }}/.bashrc"
+    line: "alias {{ combo.1.name }}='{{ combo.1.command }}'"
+    create: yes
+  vars:
+    aliases:
+      - { name: "firefox", command: "flatpak run org.mozilla.firefox" }
+      - { name: "code", command: "flatpak run com.visualstudio.code" }
+      - {
+          name: "libreoffice",
+          command: "flatpak run org.libreoffice.LibreOffice",
+        }
+  loop: "{{ (usuarios_creados | default([])) | product(aliases) | list }}"
+  loop_control:
+    loop_var: combo

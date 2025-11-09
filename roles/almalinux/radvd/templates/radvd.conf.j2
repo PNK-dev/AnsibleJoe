@@ -1,0 +1,14 @@
+# Configuración radvd para Proyecto SO
+interface {{ radvd_interface | default(ansible_default_ipv4.interface) }}
+{
+    AdvSendAdvert on;
+    MinRtrAdvInterval 30;
+    MaxRtrAdvInterval 100;
+    
+    prefix {{ ipv6_prefix | default('2001:db8:1::/64') }}
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+    };
+};

@@ -1,0 +1,80 @@
+---
+# Tareas comunes para AlmaLinux
+
+- name: "Actualizar todos los paquetes del sistema"
+  dnf:
+    name: "*"
+    state: latest
+    update_cache: yes
+    lock_timeout: 300
+  tags: [update]
+  when: not skip_system_update | default(false)
+
+- name: "Instalar herramienta dnf-plugins-core (config-manager)"
+  dnf:
+    name: dnf-plugins-core
+    state: present
+  tags: [repos]
+
+- name: "Habilitar repositorio CRB (EL9/EL10)"
+  command: dnf config-manager --set-enabled crb
+  register: enable_crb
+  changed_when: "'enabled' in enable_crb.stdout | default('') or enable_crb.rc == 0"
+  failed_when: false
+  when: ansible_facts.distribution_major_version is version('9', '>=')
+  tags: [repos]
+
+- name: "Habilitar repositorio Powertools (EL8)"
+  command: dnf config-manager --set-enabled powertools
+  register: enable_powertools
+  changed_when: "'enabled' in enable_powertools.stdout | default('') or enable_powertools.rc == 0"
+  failed_when: false
+  when: ansible_facts.distribution_major_version is version('8', '==')
+  tags: [repos]
+
+- name: "Instalar epel-release si está disponible"
+  dnf:
+    name: epel-release
+    state: present
+  register: epel_result
+  failed_when: false
+  tags: [repos]
+
+- name: "Refrescar caché de DNF tras habilitar repos"
+  command: dnf makecache
+  changed_when: false
+  tags: [repos]
+
+- name: "Instalar paquetes básicos"
+  dnf:
+    name:
+      - vim
+      - wget
+      - curl
+      - htop
+      - net-tools
+      - firewalld
+      - chrony
+    state: present
+
+- name: "Configurar zona horaria"
+  timezone:
+    name: "{{ timezone | default('America/Mexico_City') }}"
+
+- name: "Habilitar y iniciar firewalld"
+  systemd:
+    name: firewalld
+    enabled: yes
+    state: started
+
+- name: "Habilitar y iniciar chrony (NTP)"
+  systemd:
+    name: chronyd
+    enabled: yes
+    state: started
+
+- name: "Configurar SELinux"
+  selinux:
+    policy: targeted
+    state: "{{ selinux_state | default('enforcing') }}"
+  when: ansible_selinux.status == "enabled"

@@ -1,0 +1,27 @@
+=====================================
+🚀 PROYECTO DE SISTEMAS OPERATIVOS
+=====================================
+
+Servidor FTP: {{ ansible_hostname }}
+Sistema: {{ ansible_distribution }} {{ ansible_distribution_version }}
+Configurado: {{ ansible_date_time.date }}
+
+📁 Directorios disponibles:
+   /usuarios - Archivos de usuarios
+   
+📋 Información del servidor:
+   - Puerto FTP: {{ ftp_port | default('21') }}
+   - Puertos pasivos: {{ ftp_passive_ports | default('21000-21010') }}
+   - Acceso anónimo: Habilitado (solo lectura)
+
+🔧 Servicios del proyecto:
+   - HTTP/Apache: Puerto 80
+   - FTP/vsftpd: Puerto 21  
+   - DNS/BIND: Puerto 53
+   - DHCPv6: Puerto 547
+   - IPv6/radvd: Activo
+
+💡 Este servidor fue configurado automáticamente
+   usando Ansible como parte del proyecto SO.
+
+=====================================

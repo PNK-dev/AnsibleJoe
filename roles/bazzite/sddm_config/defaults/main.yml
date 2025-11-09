@@ -1,0 +1,5 @@
+---
+# Defaults for sddm_config
+sddm_theme: breeze
+sddm_auto_login: false
+sddm_auto_login_user: ""

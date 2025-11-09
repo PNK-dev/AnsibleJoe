@@ -1,0 +1,15 @@
+---
+# Playbook principal del proyecto de SO
+# Ejecuta configuraciones para AlmaLinux y Bazzite
+
+- name: "Configuración de AlmaLinux - Servicios de Red"
+  import_playbook: playbooks/almalinux.yml
+  when: "'almalinux' in groups"
+
+- name: "Configuración de Rocky Linux - Servicios de Red"
+  import_playbook: playbooks/rockylinux.yml
+  when: "'rockylinux' in groups"
+
+- name: "Configuración de Bazzite - Sistema Desktop"
+  import_playbook: playbooks/bazzite.yml
+  when: "'bazzite' in groups"

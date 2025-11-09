@@ -1,0 +1,26 @@
+{
+  "Dhcp6": {
+    "interfaces-config": {
+      "interfaces": [ "{{ dhcpv6_interface }}" ]
+    },
+    "lease-database": {
+      "type": "{{ dhcpv6_lease_db_type }}",
+      "persist": {{ dhcpv6_lease_db_persist | to_json }},
+      "name": "{{ dhcpv6_lease_db_path }}"
+    },
+    "subnet6": [
+      {
+        "id": {{ dhcpv6_subnet_id }},
+        "subnet": "{{ dhcpv6_subnet }}",
+        "interface": "{{ dhcpv6_interface }}",
+        "pools": [ { "pool": "{{ dhcpv6_pool }}" } ],
+        "option-data": [
+          {
+            "name": "dns-servers",
+            "data": "{{ dhcpv6_dns_servers | join(',') }}"
+          }
+        ]
+      }
+    ]
+  }
+}

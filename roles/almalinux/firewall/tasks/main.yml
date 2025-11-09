@@ -1,0 +1,274 @@
+---
+- name: "Instalar firewalld y herramientas de red"
+  dnf:
+    name:
+      - firewalld
+      - iptables-services
+      - nftables
+      - fail2ban
+      - radvd
+    state: present
+
+- name: "Habilitar y iniciar firewalld"
+  systemd:
+    name: firewalld
+    enabled: yes
+    state: started
+
+- name: "Configurar zona por defecto"
+  firewalld:
+    zone: "{{ firewall_default_zone | default('public') }}"
+    state: enabled
+    permanent: yes
+    immediate: yes
+
+- name: "Asignar interfaz LAN a zona internal"
+  firewalld:
+    zone: internal
+    interface: "{{ firewall_lan_interface }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Asignar interfaz WAN a zona external"
+  firewalld:
+    zone: external
+    interface: "{{ firewall_wan_interface }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Habilitar reenvío IPv6 en el kernel"
+  ansible.builtin.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: "1"
+    state: present
+    sysctl_set: yes
+    reload: yes
+
+- name: "Permitir forward desde zona internal (target=ACCEPT)"
+  firewalld:
+    zone: internal
+    target: ACCEPT
+    permanent: yes
+    state: enabled
+
+- name: "Permitir servicios básicos del sistema"
+  firewalld:
+    service: "{{ item }}"
+    zone: internal
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - ssh
+    - dhcpv6-client
+
+- name: "Permitir servicios del proyecto SO"
+  firewalld:
+    service: "{{ item }}"
+    zone: internal
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - http
+    - https
+    - ftp
+    - dns
+
+- name: "Permitir servicios requeridos en zona external (WAN)"
+  firewalld:
+    service: "{{ item }}"
+    zone: external
+    permanent: yes
+    state: enabled
+  loop: "{{ firewall_allowed_services }}"
+
+- name: "Permitir servicios requeridos en zona public (ens36)"
+  firewalld:
+    service: "{{ item }}"
+    zone: public
+    permanent: yes
+    state: enabled
+  loop: "{{ firewall_allowed_services }}"
+
+- name: "Deshabilitar servicios no requeridos en external"
+  firewalld:
+    service: "{{ item }}"
+    zone: external
+    permanent: yes
+    state: disabled
+  loop:
+    - cockpit
+    - mdns
+    - samba-client
+
+- name: "Deshabilitar servicios no requeridos en public"
+  firewalld:
+    service: "{{ item }}"
+    zone: public
+    permanent: yes
+    state: disabled
+  loop:
+    - cockpit
+    - mdns
+    - samba-client
+
+- name: "Configurar puertos específicos del proyecto"
+  firewalld:
+    port: "{{ item }}"
+    zone: internal
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - "{{ ftp_passive_ports | default('21000-21010') }}/tcp" # FTP pasivo
+    - "547/udp" # DHCPv6
+    - "546/udp" # DHCPv6 client
+
+- name: "Configurar reglas de seguridad avanzadas"
+  firewalld:
+    rich_rule: "{{ item }}"
+    zone: internal
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    # Limitar conexiones SSH
+    - "rule service name='ssh' accept limit value='3/m'"
+    # Permitir ping pero limitado
+    - "rule protocol value='icmp' accept limit value='5/m'"
+    # Bloquear puertos comunes de ataques
+    - "rule port port='23' protocol='tcp' reject" # Telnet
+    - "rule port port='135' protocol='tcp' reject" # RPC
+    - "rule port port='139' protocol='tcp' reject" # NetBIOS
+    - "rule port port='445' protocol='tcp' reject" # SMB
+
+- name: "Configurar logging del firewall"
+  firewalld:
+    zone: internal
+    permanent: yes
+    state: enabled
+    immediate: yes
+  vars:
+    ansible_firewalld_log_denied: all
+
+- name: "Crear zona personalizada para servicios internos"
+  firewalld:
+    zone: proyecto-so
+    state: present
+    permanent: yes
+  when: firewall_enable_proyecto_so_zone | default(false)
+
+- name: "Recargar firewalld tras crear zona personalizada"
+  command: firewall-cmd --reload
+  changed_when: false
+  when: firewall_enable_proyecto_so_zone | default(false)
+
+- name: "Configurar zona proyecto-so"
+  firewalld:
+    zone: proyecto-so
+    source: "192.168.1.0/24"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  when: firewall_enable_proyecto_so_zone | default(false)
+
+- name: "Permitir todos los servicios en zona interna"
+  firewalld:
+    service: "{{ item }}"
+    zone: proyecto-so
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - http
+    - https
+    - ftp
+    - dns
+    - ssh
+    - dhcpv6
+  when: firewall_enable_proyecto_so_zone | default(false)
+
+- name: "Copiar filtros personalizados"
+  include_tasks: copy-filters.yml
+
+- name: "Configurar fail2ban para protección adicional"
+  template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    backup: yes
+  notify: restart fail2ban
+
+- name: "Habilitar y iniciar fail2ban"
+  systemd:
+    name: fail2ban
+    enabled: yes
+    state: started
+
+- name: "Permitir tráfico IPv6 para servicios del proyecto"
+  firewalld:
+    rich_rule: "{{ item }}"
+    zone: internal
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - "rule family='ipv6' service name='http' accept"
+    - "rule family='ipv6' service name='dns' accept"
+    - "rule family='ipv6' port port='547' protocol='udp' accept"
+
+- name: "Configurar masquerading para NAT (si es necesario)"
+  firewalld:
+    masquerade: "{{ firewall_masquerade | default('no') }}"
+    zone: external
+    permanent: yes
+    state: enabled
+    immediate: yes
+  when: firewall_masquerade | default(false)
+
+- name: "Crear script de monitoreo del firewall"
+  template:
+    src: firewall-monitor.sh.j2
+    dest: /usr/local/bin/firewall-monitor.sh
+    mode: "0755"
+
+- name: "Configurar logrotate para logs del firewall"
+  template:
+    src: firewall-logrotate.j2
+    dest: /etc/logrotate.d/firewall-proyecto-so
+
+- name: "Verificar configuración del firewall"
+  command: firewall-cmd --check-config
+  register: firewall_check
+  changed_when: false
+
+- name: "Mostrar estado del firewall"
+  debug:
+    msg:
+      - "Firewall configurado correctamente"
+      - "Zona por defecto: {{ firewall_default_zone | default('public') }}"
+      - "Servicios permitidos: HTTP, HTTPS, FTP, DNS, SSH"
+      - "Protección fail2ban: Activa"
+      - "IPv6: Habilitado"
+
+- name: "Guardar configuración actual del firewall"
+  shell: |
+    firewall-cmd --list-all > /etc/firewalld/firewall-status.txt
+    firewall-cmd --list-all-zones > /etc/firewalld/firewall-zones.txt
+  changed_when: false
+
+- name: "Configurar radvd para anunciar prefijo IPv6 en la LAN"
+  template:
+    src: radvd.conf.j2
+    dest: /etc/radvd.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: "Habilitar y arrancar radvd"
+  systemd:
+    name: radvd
+    enabled: yes
+    state: started

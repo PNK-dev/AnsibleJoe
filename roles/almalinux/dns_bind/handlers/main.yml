@@ -1,0 +1,17 @@
+---
+# Handlers para BIND DNS
+
+- name: restart named
+  systemd:
+    name: named
+    state: restarted
+
+- name: reload named
+  systemd:
+    name: named
+    state: reloaded
+
+- name: check named config
+  command: named-checkconf /etc/named.conf
+  register: named_config_result
+  failed_when: named_config_result.rc != 0

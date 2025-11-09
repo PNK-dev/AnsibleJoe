@@ -1,0 +1,59 @@
+---
+# Configuración de DHCPv6
+
+- name: "Asegurar EPEL en familia RedHat"
+  ansible.builtin.package:
+    name: epel-release
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: "Instalar Kea DHCPv6"
+  ansible.builtin.package:
+    name: kea
+    state: present
+
+- name: "Asegurar directorio de configuración"
+  ansible.builtin.file:
+    path: "/etc/kea"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: "Asegurar directorio de leases existe"
+  ansible.builtin.file:
+    path: "/var/lib/kea"
+    state: directory
+    owner: kea
+    group: kea
+    mode: '0750'
+
+- name: "Asegurar archivo de leases con permisos"
+  ansible.builtin.file:
+    path: "/var/lib/kea/kea-leases6.csv"
+    state: touch
+    owner: kea
+    group: kea
+    mode: '0640'
+
+- name: "Deploy configuración Kea DHCPv6"
+  ansible.builtin.template:
+    src: kea-dhcp6.conf.j2
+    dest: "/etc/kea/kea-dhcp6.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart kea-dhcp6
+
+- name: "Abrir puerto DHCPv6 (547/udp) en firewalld"
+  ansible.posix.firewalld:
+    port: 547/udp
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Habilitar y iniciar kea-dhcp6"
+  ansible.builtin.service:
+    name: kea-dhcp6
+    state: started
+    enabled: yes

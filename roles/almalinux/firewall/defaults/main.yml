@@ -1,0 +1,44 @@
+---
+firewall_default_zone: "public"
+firewall_masquerade: false
+firewall_log_denied: "all"
+firewall_allowed_services:
+  - ssh
+  - http
+  - https
+  - ftp
+  - dns
+  - dhcpv6-client
+
+firewall_custom_ports:
+  - "21000-21010/tcp"
+  - "547/udp"
+  - "546/udp"
+
+fail2ban_bantime: 3600
+fail2ban_findtime: 600
+fail2ban_maxretry: 3
+fail2ban_backend: "systemd"
+
+firewall_log_file: "/var/log/firewall-monitor.log"
+firewall_log_level: "info"
+
+trusted_networks:
+  - "192.168.1.0/24"
+  - "127.0.0.0/8"
+
+firewall_ipv6_enabled: true
+ipv6_allowed_services:
+  - http
+  - dns
+  - dhcpv6
+
+firewall_wan_interface: "ens33"
+firewall_lan_interface: "ens37"
+firewall_enable_ipv6_forward: true
+firewall_ipv6_lan_prefix: "2025:db10:20::/64"
+firewall_enable_proyecto_so_zone: false
+
+monitoring_enabled: true
+security_reports_enabled: true
+log_rotation_days: 30

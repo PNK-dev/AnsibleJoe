@@ -1,0 +1,108 @@
+# Gitignore para Proyecto SO
+
+# Archivos de contraseñas de Ansible Vault
+.vault_password
+.vault_pass
+vault_password.txt
+
+# Archivos de backup de Ansible
+*.retry
+*.backup
+
+# Logs del proyecto
+*.log
+logs/
+/var/log/
+
+# Archivos temporales
+*.tmp
+*.temp
+.tmp/
+
+# Archivos de configuración local
+local_config.yml
+.env
+.env.local
+
+# Claves SSH privadas
+id_rsa
+id_ed25519
+*.pem
+*.key
+ssh_keys/
+
+# Certificados SSL
+*.crt
+*.cert
+*.p12
+*.pfx
+ssl/
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Directorios de backup
+backup/
+backups/
+*.bak
+
+# Archivos de configuración de IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Archivos de Ansible específicos
+host_vars/*/vault.yml
+group_vars/*/vault.yml
+!inventories/group_vars/all/vault.yml
+
+# Archivos de inventario con IPs reales
+inventories/production/
+inventories/staging/
+real_hosts.yml
+
+# Archivos de configuración sensibles
+config/secrets.yml
+secrets/
+credentials/
+
+# Archivos de monitoreo y reportes
+reports/
+monitoring/
+security-report-*.txt
+security-report-*.json
+
+# Archivos de base de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de cache
+.cache/
+cache/

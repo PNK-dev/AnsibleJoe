@@ -1,0 +1,89 @@
+---
+# Configuración del servidor FTP vsftpd
+
+- name: "Instalar vsftpd"
+  dnf:
+    name: vsftpd
+    state: present
+
+- name: "Crear directorio FTP personalizado"
+  file:
+    path: "{{ ftp_root | default('/var/ftp') }}"
+    state: directory
+    owner: ftp
+    group: ftp
+    mode: "0755"
+
+- name: "Crear directorio para usuarios FTP"
+  file:
+    path: "{{ ftp_root | default('/var/ftp') }}/usuarios"
+    state: directory
+    owner: ftp
+    group: ftp
+    mode: "0755"
+
+- name: "Configurar vsftpd.conf"
+  template:
+    src: vsftpd.conf.j2
+    dest: /etc/vsftpd/vsftpd.conf
+    backup: yes
+  notify: restart vsftpd
+
+- name: "Crear archivo de bienvenida FTP"
+  template:
+    src: welcome.msg.j2
+    dest: "{{ ftp_root | default('/var/ftp') }}/welcome.msg"
+    owner: ftp
+    group: ftp
+    mode: "0644"
+
+- name: "Crear archivos de ejemplo en FTP"
+  copy:
+    content: |
+      Proyecto de Sistemas Operativos
+      ===============================
+
+      Este es el servidor FTP del proyecto SO.
+
+      Servicios disponibles:
+      - HTTP: puerto 80
+      - FTP: puerto 21
+      - DNS: puerto 53
+      - DHCPv6: puerto 547
+
+      Configurado automáticamente con Ansible.
+      Fecha: {{ ansible_date_time.date }}
+    dest: "{{ ftp_root | default('/var/ftp') }}/README-ProyectoSO.txt"
+    owner: ftp
+    group: ftp
+    mode: "0644"
+
+- name: "Abrir puerto FTP en firewall"
+  firewalld:
+    service: ftp
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Abrir puertos pasivos FTP en firewall"
+  firewalld:
+    port: "{{ ftp_passive_ports | default('21000-21010') }}/tcp"
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Configurar SELinux para FTP"
+  seboolean:
+    name: "{{ item }}"
+    state: yes
+    persistent: yes
+  loop:
+    - ftpd_full_access
+    - ftpd_use_passive_mode
+  when: ansible_selinux.status == "enabled"
+
+- name: "Habilitar y iniciar vsftpd"
+  systemd:
+    name: vsftpd
+    enabled: yes
+    state: started

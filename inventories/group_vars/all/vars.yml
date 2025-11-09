@@ -1,0 +1,27 @@
+---
+
+
+# Configuración de servicios con credenciales del vault
+mysql_root_password: "{{ vault_mysql_root_password }}"
+ftp_admin_password: "{{ vault_ftp_admin_password }}"
+web_admin_password: "{{ vault_web_admin_password }}"
+
+# Configuración de SSH
+ssh_private_key_content: "{{ vault_ssh_private_key }}"
+
+# Configuración SSL
+ssl_certificate_key: "{{ vault_ssl_certificate_key }}"
+
+# Configuración de Suricata
+suricata_oinkcode: "{{ vault_suricata_oinkcode }}"
+
+# Configuración de fail2ban
+fail2ban_destemail: "{{ vault_fail2ban_email }}"
+
+# Configuración de base de datos
+database_users: "{{ vault_db_users }}"
+
+# Claves de seguridad
+security_encryption_key: "{{ vault_security_keys.encryption_key }}"
+jwt_secret_key: "{{ vault_security_keys.jwt_secret }}"
+session_secret_key: "{{ vault_security_keys.session_secret }}"

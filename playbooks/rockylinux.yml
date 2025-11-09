@@ -1,0 +1,42 @@
+---
+- name: "Rocky Linux - Configuración completa de servicios de red"
+  hosts: rockylinux
+  gather_facts: yes
+  become: yes
+
+  pre_tasks:
+    - name: "Actualizar cache de paquetes"
+      dnf:
+        update_cache: yes
+      tags: [always]
+
+    - name: "Verificar conectividad"
+      ping:
+      tags: [always]
+
+  roles:
+    - { role: almalinux/usuarios_almalinux, tags: [usuarios, users] }
+    - { role: almalinux/common, tags: [common, base] }
+    - { role: almalinux/firewall, tags: [firewall, security] }
+    - { role: almalinux/router, tags: [router, network] }
+    - { role: almalinux/radvd, tags: [radvd, ipv6] }
+    - { role: almalinux/http_web, tags: [http, web] }
+    - { role: almalinux/ftp_vsftpd, tags: [ftp] }
+    - { role: almalinux/dns_bind, tags: [dns] }
+    - { role: almalinux/dhcpv6, tags: [dhcp, ipv6] }
+    - { role: almalinux/web_page, tags: [webpage] }
+
+  post_tasks:
+    - name: "Verificar servicios activos"
+      service_facts:
+      tags: [verify]
+
+    - name: "Mostrar estado de servicios críticos"
+      debug:
+        msg: "{{ item }} está {{ ansible_facts.services[item + '.service'].state | default('no encontrado') }}"
+      loop:
+        - httpd
+        - vsftpd
+        - named
+        - radvd
+      tags: [verify]

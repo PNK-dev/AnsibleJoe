@@ -1,0 +1,34 @@
+#!/bin/bash
+# Script de información del sistema - Proyecto SO
+# Usuario: {{ item.nombre }}
+
+echo "🎮 INFORMACIÓN DEL SISTEMA BAZZITE"
+echo "=================================="
+echo "📅 Fecha: $(date)"
+echo "👤 Usuario: {{ item.nombre }}"
+echo "🖥️  Hostname: $(hostname)"
+echo "🔧 Sistema: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+echo "⚙️  Kernel: $(uname -r)"
+echo "💾 Memoria: $(free -h | grep Mem | awk '{print $3 "/" $2}')"
+echo "💿 Disco: $(df -h / | tail -1 | awk '{print $3 "/" $2 " (" $5 " usado)"}')"
+echo "🌐 IP: $(ip route get 1 | awk '{print $7}' | head -1)"
+
+echo ""
+echo "📦 SOFTWARE INSTALADO"
+echo "===================="
+echo "🔹 Flatpak Apps:"
+flatpak list --user --columns=name 2>/dev/null | tail -n +1 | head -10
+
+echo ""
+echo "🔹 Servicios activos:"
+systemctl --user list-units --state=running --no-pager | head -5
+
+echo ""
+echo "🎯 PROYECTO SO"
+echo "=============="
+echo "Versión: {{ proyecto_so.version | default('1.0') }}"
+echo "Configurado: {{ ansible_date_time.date }}"
+echo "Servidor AlmaLinux: 192.168.1.1"
+
+echo ""
+echo "💡 Usa 'proyecto_help' para más comandos"

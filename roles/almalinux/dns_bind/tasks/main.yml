@@ -1,0 +1,102 @@
+---
+# Configuración del servidor DNS BIND
+
+- name: "Instalar BIND DNS server"
+  dnf:
+    name:
+      - bind
+      - bind-utils
+    state: present
+
+- name: "Crear directorio para zonas DNS"
+  file:
+    path: /var/named/zones
+    state: directory
+    owner: named
+    group: named
+    mode: "0755"
+
+- name: "Crear directorio de logs de BIND"
+  file:
+    path: /var/log/named
+    state: directory
+    owner: named
+    group: named
+    mode: "0750"
+    setype: named_log_t
+
+- name: "Crear directorio de datos de BIND"
+  file:
+    path: /var/named/data
+    state: directory
+    owner: named
+    group: named
+    mode: "0750"
+
+- name: "Crear directorio dynamic de BIND"
+  file:
+    path: /var/named/dynamic
+    state: directory
+    owner: named
+    group: named
+    mode: "0750"
+
+- name: "Configurar named.conf principal"
+  template:
+    src: named.conf.j2
+    dest: /etc/named.conf
+    owner: root
+    group: named
+    mode: "0640"
+    backup: yes
+  notify: restart named
+
+- name: "Crear zona directa del proyecto"
+  template:
+    src: zona_directa.j2
+    dest: "/var/named/zones/db.{{ network_domain }}"
+    owner: named
+    group: named
+    mode: "0644"
+    setype: named_zone_t
+  notify: restart named
+
+- name: "Aplicar contextos SELinux correctos a /var/named"
+  command: restorecon -Rv /var/named
+  when: ansible_selinux.status == "enabled"
+
+- name: "Aplicar contextos SELinux correctos a /var/log/named"
+  command: restorecon -Rv /var/log/named
+  when: ansible_selinux.status == "enabled"
+
+- name: "Validar archivo de zona (named-checkzone)"
+  command: "named-checkzone {{ network_domain }} /var/named/zones/db.{{ network_domain }}"
+  register: bind_zone_check
+  changed_when: false
+
+- name: "Abrir puerto DNS en firewall"
+  firewalld:
+    service: dns
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Configurar SELinux para BIND"
+  seboolean:
+    name: named_write_master_zones
+    state: yes
+    persistent: yes
+  when: ansible_selinux.status == "enabled"
+
+- name: "Validar configuración de BIND (named-checkconf)"
+  command: named-checkconf -z /etc/named.conf
+  register: bind_config_check
+  changed_when: false
+
+- name: "Habilitar y iniciar BIND"
+  systemd:
+    name: named
+    enabled: yes
+    state: started
+  when: bind_config_check.rc == 0
+

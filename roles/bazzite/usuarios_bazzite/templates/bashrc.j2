@@ -1,0 +1,36 @@
+# .bashrc personalizado para usuarios del proyecto SO
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# Aliases útiles
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Aliases específicos del proyecto
+alias proyecto-info='neofetch'
+alias update-system='sudo rpm-ostree upgrade'
+alias install-flatpak='flatpak install --user'
+
+# Prompt personalizado
+PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+
+# Variables de entorno
+export EDITOR=vim
+export BROWSER=firefox
+export TERM=xterm-256color
+
+# Historial
+export HISTSIZE=1000
+export HISTFILESIZE=2000
+export HISTCONTROL=ignoredups:erasedups
+
+# Mensaje de bienvenida
+echo "🎮 Bienvenido al sistema Bazzite configurado por el Proyecto SO"
+echo "💡 Usa 'proyecto-info' para ver información del sistema"

@@ -1,0 +1,48 @@
+#!/bin/bash
+# Perfil global del Proyecto SO
+# Se ejecuta para todos los usuarios
+
+# Variables del proyecto
+export PROYECTO_SO_VERSION="1.0"
+export PROYECTO_SO_FECHA="{{ ansible_date_time.date }}"
+
+# Aliases globales del proyecto
+alias proyecto-info='echo "🚀 Proyecto SO v$PROYECTO_SO_VERSION - Configurado el $PROYECTO_SO_FECHA"'
+alias sistema-info='hostnamectl && echo "Usuarios activos:" && who'
+alias red-info='ip addr show && echo "Rutas:" && ip route'
+
+# Funciones útiles
+proyecto_help() {
+    echo "🔧 COMANDOS DEL PROYECTO SO"
+    echo "=========================="
+    echo "proyecto-info    - Información del proyecto"
+    echo "sistema-info     - Información del sistema"
+    echo "red-info         - Información de red"
+    echo "proyecto-logs    - Ver logs del sistema"
+    echo "proyecto-status  - Estado de servicios"
+}
+
+proyecto_logs() {
+    echo "📋 LOGS RECIENTES DEL SISTEMA"
+    echo "============================="
+    journalctl --since "1 hour ago" --no-pager | tail -20
+}
+
+proyecto_status() {
+    echo "📊 ESTADO DE SERVICIOS"
+    echo "======================"
+    {% if ansible_distribution == "AlmaLinux" %}
+    systemctl status httpd vsftpd named radvd --no-pager -l
+    {% else %}
+    systemctl status sddm --no-pager -l
+    {% endif %}
+}
+
+# Exportar funciones
+export -f proyecto_help proyecto_logs proyecto_status
+
+# Mensaje de bienvenida (solo para sesiones interactivas)
+if [[ $- == *i* ]]; then
+    echo "🎯 Proyecto SO - Sistema configurado automáticamente"
+    echo "💡 Usa 'proyecto_help' para ver comandos disponibles"
+fi

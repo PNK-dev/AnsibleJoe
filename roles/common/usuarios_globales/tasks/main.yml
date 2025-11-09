@@ -1,0 +1,73 @@
+---
+# Gestión global de usuarios - Compatible con AlmaLinux y Bazzite
+
+- name: "Verificar si el sistema usa rpm-ostree (Bazzite)"
+  stat:
+    path: /usr/bin/rpm-ostree
+  register: is_ostree_system
+
+- name: "Crear grupos del sistema si no existen"
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - wheel
+    - audio
+    - video
+    - docker
+    - students
+    - teachers
+  ignore_errors: yes
+
+- name: "Crear usuarios del proyecto SO"
+  user:
+    name: "{{ item.nombre }}"
+    comment: "{{ item.descripcion | default('Usuario del Proyecto SO') }}"
+    groups: "{{ item.grupos | join(',') }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    create_home: "{{ item.crear_home | default(true) }}"
+    password: "{{ item.password | default('$6$rounds=656000$salt$hash') }}"
+    state: present
+  loop: "{{ usuarios_proyecto | default([]) }}"
+  no_log: true
+
+- name: "Configurar directorios home estándar"
+  file:
+    path: "/home/{{ item.0.nombre }}/{{ item.1 }}"
+    state: directory
+    owner: "{{ item.0.nombre }}"
+    group: "{{ item.0.nombre }}"
+    mode: "0755"
+  loop: "{{ usuarios_proyecto | default([]) | product(directorios_home) | list }}"
+  vars:
+    directorios_home:
+      - Desktop
+      - Documents
+      - Downloads
+      - Pictures
+      - Videos
+      - Projects
+      - Scripts
+
+- name: "Configurar sudoers para grupo wheel"
+  lineinfile:
+    path: /etc/sudoers
+    regexp: "^%wheel"
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    validate: "visudo -cf %s"
+  when: configurar_sudo | default(true)
+
+- name: "Crear archivo de perfil personalizado"
+  template:
+    src: profile_proyecto.sh.j2
+    dest: "/etc/profile.d/proyecto-so.sh"
+    mode: "0644"
+
+- name: "Configurar bashrc personalizado para cada usuario"
+  template:
+    src: bashrc_global.j2
+    dest: "/home/{{ item.nombre }}/.bashrc"
+    owner: "{{ item.nombre }}"
+    group: "{{ item.nombre }}"
+    mode: "0644"
+  loop: "{{ usuarios_proyecto | default([]) }}"

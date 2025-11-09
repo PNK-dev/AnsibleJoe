@@ -1,0 +1,20 @@
+---
+# Copiar filtros personalizados de fail2ban
+
+- name: "Copiar filtro personalizado de fail2ban"
+  copy:
+    src: proyecto-so-custom.conf
+    dest: /etc/fail2ban/filter.d/proyecto-so-custom.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart fail2ban
+
+- name: "Verificar que el filtro se copió correctamente"
+  stat:
+    path: /etc/fail2ban/filter.d/proyecto-so-custom.conf
+  register: custom_filter
+
+- name: "Confirmar instalación del filtro"
+  debug:
+    msg: "Filtro personalizado instalado: {{ custom_filter.stat.exists }}"

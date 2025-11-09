@@ -1,0 +1,50 @@
+# Configuración vsftpd - Proyecto SO
+# Generado automáticamente por Ansible
+
+# Configuración básica
+anonymous_enable=YES
+local_enable=YES
+write_enable=YES
+local_umask=022
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+
+# Configuración de puertos
+listen_port={{ ftp_port | default('21') }}
+pasv_min_port={{ ftp_passive_ports.split('-')[0] | default('21000') }}
+pasv_max_port={{ ftp_passive_ports.split('-')[1] | default('21010') }}
+
+# Configuración de usuarios
+anonymous_enable=YES
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
+anon_root={{ ftp_root | default('/var/ftp') }}
+
+# Configuración de seguridad
+chroot_local_user=YES
+allow_writeable_chroot=YES
+secure_chroot_dir=/var/run/vsftpd/empty
+
+# Configuración de logs
+xferlog_std_format=YES
+xferlog_file=/var/log/xferlog
+dual_log_enable=YES
+vsftpd_log_file=/var/log/vsftpd.log
+
+# Configuración de red
+listen=YES
+listen_ipv6=NO
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+
+# Mensaje de bienvenida
+ftpd_banner=Bienvenido al servidor FTP del Proyecto SO - {{ ansible_hostname }}
+banner_file={{ ftp_root | default('/var/ftp') }}/welcome.msg
+
+# Configuración adicional
+idle_session_timeout=600
+data_connection_timeout=120
+max_clients=50
+max_per_ip=5

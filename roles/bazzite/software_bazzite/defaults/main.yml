@@ -1,0 +1,4 @@
+---
+# Defaults for software_bazzite
+software_flatpak: []
+software_rpm: []

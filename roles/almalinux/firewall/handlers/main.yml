@@ -1,0 +1,26 @@
+---
+# Handlers para el firewall
+
+- name: restart firewalld
+  systemd:
+    name: firewalld
+    state: restarted
+
+- name: reload firewalld
+  systemd:
+    name: firewalld
+    state: reloaded
+
+- name: restart fail2ban
+  systemd:
+    name: fail2ban
+    state: restarted
+
+- name: reload fail2ban
+  systemd:
+    name: fail2ban
+    state: reloaded
+
+- name: save firewall config
+  command: firewall-cmd --runtime-to-permanent
+  changed_when: false

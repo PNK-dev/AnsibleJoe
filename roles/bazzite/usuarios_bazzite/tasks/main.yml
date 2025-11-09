@@ -1,0 +1,137 @@
+---
+# Gestión de usuarios en Bazzite - Migrado desde ansiblebaz-cambiado
+
+- name: "Crear grupo 'gamers'"
+  group:
+    name: gamers
+    state: present
+
+- name: "Crear grupos adicionales si no existen"
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - wheel
+  tags: [groups]
+
+- name: "Crear usuario gamer"
+  user:
+    name: gamer
+    comment: "Usuario de juegos"
+    shell: /bin/bash
+    groups: gamers
+    append: true
+    create_home: true
+    password: "{{ (vault_bazzite_passwords.gamer | default('123')) | password_hash('sha512') }}"
+  register: result_gamer
+
+- name: "Crear usuario tech (administrador técnico)"
+  user:
+    name: tech
+    comment: "Administrador técnico"
+    shell: /bin/bash
+    groups: wheel,gamers
+    append: true
+    create_home: true
+    password: "{{ (vault_bazzite_passwords.tech | default('Tech2025')) | password_hash('sha512') }}"
+  register: result_tech
+
+- name: "Crear usuario admin (administrador total)"
+  user:
+    name: admin
+    comment: "Administrador general"
+    shell: /bin/bash
+    groups: wheel
+    append: true
+    create_home: true
+    password: "{{ (vault_bazzite_passwords.admin | default('21qwasdzxc')) | password_hash('sha512') }}"
+  register: result_admin
+
+- name: "Compilar lista de usuarios creados"
+  set_fact:
+    usuarios_creados: "{{ [] 
+      | union(['gamer'] if (result_gamer is defined and result_gamer.changed) else [])
+      | union(['tech'] if (result_tech is defined and result_tech.changed) else [])
+      | union(['admin'] if (result_admin is defined and result_admin.changed) else [])
+    }}"
+
+- name: "Feedback usuarios creados"
+  debug:
+    msg: "Usuarios creados: {{ (usuarios_creados | length > 0) | ternary(usuarios_creados | join(', '), 'ninguno') }}"
+
+- name: "Asignar permisos de sudo restringido a tech"
+  copy:
+    dest: /etc/sudoers.d/tech
+    content: |
+      tech ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart *, /usr/bin/dnf *, /usr/bin/rpm-ostree *
+    mode: '0440'
+
+- name: "Asegurar permisos 0700 en los home"
+  file:
+    path: "/home/{{ item }}"
+    mode: "0700"
+  loop:
+    - gamer
+    - tech
+    - admin
+
+- name: "Permitir acceso de tech al home de gamer"
+  acl:
+    path: /home/gamer
+    entity: tech
+    etype: user
+    permissions: rx
+    state: present
+
+- name: "Permitir acceso de admin al home de gamer"
+  acl:
+    path: /home/gamer
+    entity: admin
+    etype: user
+    permissions: rx
+    state: present
+
+- name: "Permitir acceso de admin al home de tech"
+  acl:
+    path: /home/tech
+    entity: admin
+    etype: user
+    permissions: rx
+    state: present
+
+- name: "Configurar sudoers para usuarios wheel"
+  lineinfile:
+    path: /etc/sudoers
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) ALL'
+    validate: 'visudo -cf %s'
+  tags: [sudo]
+
+- name: "Crear directorios home personalizados"
+  vars:
+    subdirs:
+      - Desktop
+      - Documents
+      - Downloads
+      - Pictures
+      - Videos
+  file:
+    path: "/home/{{ combo.0.nombre }}/{{ combo.1 }}"
+    state: directory
+    owner: "{{ combo.0.nombre }}"
+    group: "{{ combo.0.nombre }}"
+    mode: '0755'
+  loop: "{{ (usuarios_crear | default([])) | product(subdirs) | list }}"
+  loop_control:
+    loop_var: combo
+  tags: [home_dirs]
+
+- name: "Configurar bashrc personalizado"
+  template:
+    src: bashrc.j2
+    dest: "/home/{{ item.nombre }}/.bashrc"
+    owner: "{{ item.nombre }}"
+    group: "{{ item.nombre }}"
+    mode: '0644'
+  loop: "{{ usuarios_crear | default([]) }}"
+  tags: [bashrc]

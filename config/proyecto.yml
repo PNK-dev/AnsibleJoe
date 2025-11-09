@@ -1,0 +1,120 @@
+---
+proyecto:
+  nombre: "Proyecto de Sistemas Operativos"
+  version: "2.1"
+  autor: "Kendell"
+  institucion: "Universidad Peruana Unión"
+  materia: "Sistemas Operativos - Villegas"
+
+red:
+  dominio: "gamecenter.com"
+  red_local: "192.168.1.0/24"
+  servidor_ip: "192.168.1.1"
+  dns_externos:
+    - "8.8.8.8"
+    - "1.1.1.1"
+  ipv6_prefix: "2025:db10:20::/64"
+  ipv6_servidor: "2025:db10:20::1"
+
+usuarios:
+  # Usuarios del sistema Bazzite (migrados desde ansiblebaz-cambiado)
+  gamers:
+    - nombre: "gamer"
+      nombre_completo: "Usuario de juegos"
+      grupos: ["gamers"]
+      shell: "/bin/bash"
+      crear_home: true
+
+  tecnicos:
+    - nombre: "tech"
+      nombre_completo: "Administrador técnico"
+      grupos: ["wheel", "gamers"]
+      shell: "/bin/bash"
+      crear_home: true
+      sudo_commands:
+        - "/usr/bin/systemctl restart *"
+        - "/usr/bin/dnf *"
+        - "/usr/bin/rpm-ostree *"
+
+  administradores:
+    - nombre: "admin"
+      nombre_completo: "Administrador general"
+      grupos: ["wheel"]
+      shell: "/bin/bash"
+      crear_home: true
+
+servicios_almalinux:
+  http:
+    puerto: 80
+    ssl_puerto: 443
+    documento_raiz: "/var/www/html"
+
+  ftp:
+    puerto: 21
+    puertos_pasivos: "21000-21010"
+    acceso_anonimo: true
+
+  dns:
+    puerto: 53
+    forwarders:
+      - "8.8.8.8"
+      - "1.1.1.1"
+    zonas:
+      - nombre: "gamecenter.com"
+        tipo: "master"
+
+  dhcpv6:
+    rango_inicio: "2025:db10:20::100"
+    rango_fin: "2025:db10:20::200"
+    tiempo_lease: 3600
+
+software_bazzite:
+  rpm_packages:
+    - "git"
+    - "vim"
+    - "htop"
+    - "neofetch"
+    - "tree"
+    - "wget"
+    - "curl"
+
+sddm:
+  tema: "breeze"
+  auto_login: false
+  usuarios_ocultos:
+    - "root"
+    - "bin"
+    - "daemon"
+    - "adm"
+    - "lp"
+    - "sync"
+    - "shutdown"
+    - "halt"
+
+# Optimización del 
+optimizacion:
+  swap_size: "8G"
+  vm_swappiness: 10
+  kernel_params:
+    - "quiet"
+    - "splash"
+
+# Mantenimiento automático
+mantenimiento:
+  auto_update: true
+  cleanup_enabled: true
+  cleanup_schedule: "weekly"
+  backup_enabled: true
+  backup_retention_days: 7
+
+
+hosts_bazzite:
+  # - nombre: "bazzite-desktop"
+  #   ip: "192.168.1.100"
+  #   usuario: "deck"
+  #   descripcion: "Desktop principal Bazzite"
+  #
+  # - nombre: "bazzite-laptop"
+  #   ip: "192.168.1.101"
+  #   usuario: "deck"
+  #   descripcion: "Laptop Bazzite"

@@ -1,0 +1,21 @@
+---
+# Optimización del sistema Bazzite
+
+- name: "Configurar swappiness"
+  sysctl:
+    name: vm.swappiness
+    value: "{{ vm_swappiness | default('10') }}"
+    state: present
+    reload: yes
+
+- name: "Optimizar parámetros de red"
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: "net.core.rmem_max", value: "16777216" }
+    - { name: "net.core.wmem_max", value: "16777216" }
+    - { name: "net.ipv4.tcp_rmem", value: "4096 87380 16777216" }
+    - { name: "net.ipv4.tcp_wmem", value: "4096 65536 16777216" }

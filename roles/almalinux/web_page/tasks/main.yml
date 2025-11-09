@@ -1,0 +1,18 @@
+---
+# Crear página web personalizada adicional
+
+- name: "Crear directorio para páginas adicionales"
+  file:
+    path: "{{ web_root | default('/var/www/html') }}/proyecto"
+    state: directory
+    owner: apache
+    group: apache
+    mode: "0755"
+
+- name: "Crear página de información del proyecto"
+  template:
+    src: proyecto-info.html.j2
+    dest: "{{ web_root | default('/var/www/html') }}/proyecto/index.html"
+    owner: apache
+    group: apache
+    mode: "0644"

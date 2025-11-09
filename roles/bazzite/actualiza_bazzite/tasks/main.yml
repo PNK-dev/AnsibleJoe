@@ -1,0 +1,54 @@
+---
+# Actualización automática de Bazzite (migrado desde ansiblebaz-cambiado)
+
+- name: Crear el script de mantenimiento y apagado
+  ansible.builtin.copy:
+    dest: /usr/local/bin/mantenimiento-noche.sh
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      echo "Iniciando búsqueda e instalación de actualizaciones de Bazzite (rpm-ostree)..."
+      /usr/bin/rpm-ostree upgrade --noninteractive
+
+      echo "Iniciando limpieza de Flatpak..."
+      /usr/bin/flatpak uninstall --unused -y
+      /usr/bin/flatpak repair
+
+      echo "Mantenimiento terminado. Apagando el sistema..."
+      /sbin/shutdown now
+
+- name: Crear servicio Systemd (mantenimiento-noche.service)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/mantenimiento-noche.service
+    content: |
+      [Unit]
+      Description=Mantenimiento y apagado automáticos a las 22:00
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/mantenimiento-noche.sh
+      User=root
+      RemainAfterExit=no
+
+- name: Crear temporizador Systemd (mantenimiento-noche.timer)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/mantenimiento-noche.timer
+    content: |
+      [Unit]
+      Description=Ejecuta el mantenimiento y apagado a las 22:00
+
+      [Timer]
+      OnCalendar=*-*-* 22:00:00
+      Persistent=true
+      
+      [Install]
+      WantedBy=timers.target
+
+- name: Recargar systemd y activar el temporizador
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: mantenimiento-noche.timer
+    enabled: true
+    state: started

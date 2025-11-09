@@ -1,0 +1,78 @@
+# .bashrc personalizado - Proyecto SO
+# Usuario: {{ item.nombre }}
+# Generado automáticamente el {{ ansible_date_time.date }}
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# Source perfil del proyecto
+if [ -f /etc/profile.d/proyecto-so.sh ]; then
+    . /etc/profile.d/proyecto-so.sh
+fi
+
+# Aliases personales
+alias ll='ls -alF --color=auto'
+alias la='ls -A --color=auto'
+alias l='ls -CF --color=auto'
+alias grep='grep --color=auto'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Aliases específicos por tipo de usuario
+{% if 'teachers' in item.grupos %}
+# Aliases para profesores
+alias ver-estudiantes='getent group students | cut -d: -f4 | tr "," "\n"'
+alias logs-sistema='sudo journalctl -f'
+{% endif %}
+
+{% if 'students' in item.grupos %}
+# Aliases para estudiantes
+alias mi-info='id && groups'
+alias ayuda='proyecto_help'
+{% endif %}
+
+# Configuración del prompt
+{% if ansible_distribution == "AlmaLinux" %}
+PS1='\[\033[01;31m\][\u@\h \W]\$\[\033[00m\] '
+{% else %}
+PS1='\[\033[01;34m\]🎮 \u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
+{% endif %}
+
+# Variables de entorno
+export EDITOR=vim
+export HISTSIZE=1000
+export HISTFILESIZE=2000
+export HISTCONTROL=ignoredups:erasedups
+
+# Configuración específica por sistema
+{% if ansible_distribution == "AlmaLinux" %}
+export BROWSER=firefox
+alias servicios='sudo systemctl status httpd vsftpd named'
+alias reiniciar-web='sudo systemctl restart httpd'
+{% else %}
+export BROWSER=firefox
+alias actualizar='rpm-ostree upgrade'
+alias instalar='flatpak install --user'
+alias apps='flatpak list --user'
+{% endif %}
+
+# Función de bienvenida personalizada
+bienvenida_{{ item.nombre | replace('-', '_') }}() {
+    echo "👋 Hola {{ item.nombre }}!"
+    echo "📅 $(date)"
+    echo "🖥️  Sistema: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+    {% if 'teachers' in item.grupos %}
+    echo "👨‍🏫 Rol: Profesor"
+    echo "🔧 Tienes permisos administrativos"
+    {% elif 'students' in item.grupos %}
+    echo "👨‍🎓 Rol: Estudiante"
+    echo "📚 Usa 'ayuda' para ver comandos disponibles"
+    {% endif %}
+}
+
+# Mostrar bienvenida en login interactivo
+if [[ $- == *i* ]] && [[ -z "$TMUX" ]]; then
+    bienvenida_{{ item.nombre | replace('-', '_') }}
+fi

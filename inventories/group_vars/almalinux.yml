@@ -1,0 +1,80 @@
+---
+# Variables específicas para AlmaLinux
+
+# Configuración del servidor web
+apache_port: 80
+apache_ssl_port: 443
+web_root: "/var/www/html"
+apache_modules:
+  - mod_ssl
+  - mod_rewrite
+  - mod_headers
+
+# Configuración FTP
+ftp_port: 21
+ftp_passive_ports: "21000-21010"
+ftp_root: "/var/ftp"
+ftp_anonymous_enable: true
+
+# Configuración DNS
+dns_forwarders:
+  - "8.8.8.8"
+  - "1.1.1.1"
+network_domain: "proyecto-so.local"
+dns_zones:
+  - name: "proyecto-so.local"
+    type: "master"
+
+# Configuración DHCPv6
+dhcpv6_range_start: "2025:db10:20::100"
+dhcpv6_range_end: "2025:db10:20::200"
+dhcpv6_lease_time: "3600"
+
+# Configuración IPv6
+ipv6_prefix: "2025:db10:20::/64"
+radvd_interface: "ens37"
+ipv6_router_address: "2025:db10:20::1"
+
+# Servicios a habilitar
+services_enabled:
+  - httpd
+  - vsftpd
+  - named
+  - radvd
+  - dhcpd6
+  - firewalld
+  - fail2ban
+  - suricata
+
+# Configuración del firewall
+firewall_default_zone: "public"
+firewall_masquerade: false
+firewall_log_denied: "all"
+
+# Configuración de fail2ban
+fail2ban_bantime: 3600
+fail2ban_findtime: 600
+fail2ban_maxretry: 3
+
+# Redes confiables
+trusted_networks:
+  - "2025:db10:20::/64"
+  - "127.0.0.0/8"
+
+# Configuración de seguridad avanzada
+security_hardening:
+  ssh_max_attempts: 3
+  http_rate_limit: true
+  block_malicious_ports: true
+  enable_intrusion_detection: true
+
+# Configuración de Suricata IDS/IPS
+suricata_mode: "ids"
+suricata_home_net: "2025:db10:20::/64,127.0.0.0/8"
+suricata_interface: "{{ ansible_default_ipv4.interface }}"
+suricata_auto_analysis_enabled: true
+suricata_auto_block_enabled: true
+suricata_rules_update_enabled: true
+
+# Sudo desde Vault para no pedir contraseña interactiva
+ansible_become_password: "{{ vault_local_sudo | default(omit) }}"

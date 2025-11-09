@@ -1,0 +1,42 @@
+---
+# Variables globales para todos los hosts del Proyecto SO
+
+network_domain: "proyecto-so.local"
+dns_servers:
+  - "8.8.8.8"
+  - "8.8.4.4"
+  - "1.1.1.1"
+
+timezone: "America/Peru"
+ntp_servers:
+  - "pool.ntp.org"
+  - "time.google.com"
+
+firewall_enabled: true
+selinux_state: enforcing
+configurar_sudo: true
+
+log_level: info
+log_retention_days: 30
+
+
+software_comun:
+  - git
+  - vim
+  - htop
+  - neofetch
+  - tree
+  - wget
+  - curl
+
+backup_enabled: true
+backup_retention_days: 7
+backup_directory: "/backup/proyecto-so"
+
+proyecto_so:
+  version: "1.0"
+  descripcion: "Proyecto de Sistemas Operativos - AlmaLinux + Bazzite"
+  autor: "Estudiante SO"
+  fecha_creacion: "{{ ansible_date_time.date }}"
+
+ansible_become_password: "{{ vault_local_sudo | default(omit) }}"

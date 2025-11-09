@@ -1,0 +1,44 @@
+---
+# Variables específicas para Bazzite
+
+# NOTA: Los usuarios ahora se definen globalmente en vars.yml con Vault
+# Esta variable se mantiene para compatibilidad pero no se usa
+
+# Software a instalar
+software_flatpak:
+  - "org.mozilla.firefox"
+  - "org.libreoffice.LibreOffice"
+  - "com.visualstudio.code"
+  - "org.gimp.GIMP"
+  - "org.blender.Blender"
+
+software_rpm:
+  - "git"
+  - "vim"
+  - "htop"
+  - "neofetch"
+
+# Configuración SDDM
+sddm_theme: "breeze"
+sddm_auto_login: false
+usuarios_ocultos:
+  - "root"
+  - "bin"
+  - "daemon"
+  - "adm"
+  - "lp"
+  - "sync"
+  - "shutdown"
+  - "halt"
+
+# Configuración de optimización
+swap_size: "8G"
+vm_swappiness: 10
+kernel_parameters:
+  - "quiet"
+  - "splash"
+
+# Mantenimiento automático
+auto_update_enabled: true
+cleanup_enabled: true
+cleanup_schedule: "weekly"

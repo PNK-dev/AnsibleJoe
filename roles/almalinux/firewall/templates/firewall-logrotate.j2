@@ -1,0 +1,37 @@
+# Configuración logrotate para logs del firewall - Proyecto SO
+
+/var/log/firewall-monitor.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 0644 root root
+    postrotate
+        /bin/systemctl reload rsyslog > /dev/null 2>&1 || true
+    endscript
+}
+
+/var/log/fail2ban.log {
+    weekly
+    missingok
+    rotate 4
+    compress
+    delaycompress
+    notifempty
+    create 0644 root root
+    postrotate
+        /bin/systemctl reload fail2ban > /dev/null 2>&1 || true
+    endscript
+}
+
+/var/log/security-report-*.txt {
+    weekly
+    missingok
+    rotate 8
+    compress
+    delaycompress
+    notifempty
+    maxage 60
+}

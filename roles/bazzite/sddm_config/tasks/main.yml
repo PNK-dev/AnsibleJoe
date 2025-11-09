@@ -1,0 +1,19 @@
+---
+# Configuración de SDDM
+
+- name: "Configurar tema de SDDM"
+  lineinfile:
+    path: /etc/sddm.conf
+    regexp: "^Current="
+    line: "Current={{ sddm_theme | default('breeze') }}"
+    create: yes
+  notify: restart sddm
+
+- name: "Configurar auto-login"
+  lineinfile:
+    path: /etc/sddm.conf
+    regexp: "^User="
+    line: "User={{ sddm_auto_login_user | default('') }}"
+    create: yes
+  when: sddm_auto_login | default(false)
+  notify: restart sddm

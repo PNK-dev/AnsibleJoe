@@ -1,0 +1,21 @@
+---
+# Configuración de mantenimiento automático para Bazzite
+
+- name: "Configurar actualización automática"
+  cron:
+    name: "Actualización automática del sistema"
+    minute: "0"
+    hour: "3"
+    job: "rpm-ostree upgrade --check && rpm-ostree upgrade --reboot"
+    user: root
+  when: auto_update_enabled | default(true)
+
+- name: "Configurar limpieza automática"
+  cron:
+    name: "Limpieza de archivos temporales"
+    minute: "30"
+    hour: "2"
+    weekday: "0"
+    job: "find /tmp -type f -atime +7 -delete"
+    user: root
+  when: cleanup_enabled | default(true)

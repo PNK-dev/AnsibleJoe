@@ -1,0 +1,95 @@
+//
+// named.conf - Configuración BIND para Proyecto SO
+// Generado automáticamente por Ansible
+//
+
+options {
+    listen-on port 53 { 127.0.0.1; any; };
+    listen-on-v6 port 53 { ::1; any; };
+    directory "/var/named";
+    dump-file "/var/named/data/cache_dump.db";
+    statistics-file "/var/named/data/named_stats.txt";
+    memstatistics-file "/var/named/data/named_mem_stats.txt";
+    secroots-file "/var/named/data/named.secroots";
+    recursing-file "/var/named/data/named.recursing";
+    
+    allow-query {
+        localhost;
+        ::1;
+{% for net in trusted_networks | default([]) %}
+        {{ net }};
+{% endfor %}
+    };
+    allow-recursion {
+        localhost;
+        ::1;
+{% for net in trusted_networks | default([]) %}
+        {{ net }};
+{% endfor %}
+    };
+    
+    forwarders {
+{% for dns in dns_forwarders | default(['8.8.8.8', '1.1.1.1']) %}
+        {{ dns }};
+{% endfor %}
+    };
+    
+    recursion yes;
+    dnssec-validation yes;
+    
+    managed-keys-directory "/var/named/dynamic";
+    pid-file "/run/named/named.pid";
+    session-keyfile "/run/named/session.key";
+    
+    include "/etc/crypto-policies/back-ends/bind.config";
+};
+
+logging {
+    channel default_debug {
+        file "data/named.run";
+        severity dynamic;
+    };
+    
+    channel query_log {
+        file "/var/log/named/query.log" versions 3 size 5m;
+        severity info;
+        print-time yes;
+        print-category yes;
+    };
+    
+    category queries { query_log; };
+};
+
+// Zona raíz
+zone "." IN {
+    type hint;
+    file "named.ca";
+};
+
+// Zona localhost
+zone "localhost" IN {
+    type master;
+    file "named.localhost";
+    allow-update { none; };
+};
+
+// Zona localhost inversa
+zone "1.0.0.127.in-addr.arpa" IN {
+    type master;
+    file "named.loopback";
+    allow-update { none; };
+};
+
+// Zona del proyecto SO
+zone "{{ network_domain }}" IN {
+    type master;
+    file "zones/db.{{ network_domain }}";
+    allow-update { none; };
+    allow-query { any; };
+};
+
+// Zona inversa del proyecto (IPv4) — omitida porque la red interna es solo IPv6
+
+// Archivos de ejemplo/defecto omitidos para evitar zonas duplicadas (localhost)
+// include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";

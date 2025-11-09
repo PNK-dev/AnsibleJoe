@@ -1,0 +1,18 @@
+---
+# Ocultar usuarios del sistema en SDDM
+
+- name: "Configurar usuarios ocultos en SDDM"
+  lineinfile:
+    path: /etc/sddm.conf
+    regexp: "^HideUsers="
+    line: "HideUsers={{ usuarios_ocultos | default(['root', 'bin', 'daemon']) | join(',') }}"
+    create: yes
+  notify: restart sddm
+
+- name: "Configurar shell ocultos"
+  lineinfile:
+    path: /etc/sddm.conf
+    regexp: "^HideShells="
+    line: "HideShells=/sbin/nologin,/bin/false"
+    create: yes
+  notify: restart sddm

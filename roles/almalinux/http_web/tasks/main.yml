@@ -1,0 +1,52 @@
+---
+# Configuración del servidor HTTP/Apache
+
+- name: "Instalar Apache HTTP Server"
+  dnf:
+    name:
+      - httpd
+      - mod_ssl
+    state: present
+
+- name: "Crear directorio web personalizado"
+  file:
+    path: "{{ web_root | default('/var/www/html') }}"
+    state: directory
+    owner: apache
+    group: apache
+    mode: "0755"
+
+- name: "Configurar página de inicio personalizada"
+  template:
+    src: index.html.j2
+    dest: "{{ web_root | default('/var/www/html') }}/index.html"
+    owner: apache
+    group: apache
+    mode: "0644"
+
+- name: "Configurar Apache - httpd.conf"
+  template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+    backup: yes
+  notify: restart apache
+
+- name: "Abrir puerto HTTP en firewall"
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Abrir puerto HTTPS en firewall"
+  firewalld:
+    service: https
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: "Habilitar y iniciar Apache"
+  systemd:
+    name: httpd
+    enabled: yes
+    state: started
