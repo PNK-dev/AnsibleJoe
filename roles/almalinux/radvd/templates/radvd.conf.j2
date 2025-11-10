@@ -4,11 +4,19 @@ interface {{ radvd_interface | default(ansible_default_ipv4.interface) }}
     AdvSendAdvert on;
     MinRtrAdvInterval 30;
     MaxRtrAdvInterval 100;
+    {% if enable_dhcpv6_managed | default(false) %}
+    AdvManagedFlag on;
+    AdvOtherConfigFlag on;
+    {% endif %}
     
-    prefix {{ ipv6_prefix | default('2001:db8:1::/64') }}
+    prefix {{ ipv6_prefix | default('2001:db8:1::/120') }}
     {
         AdvOnLink on;
+        {% if enable_dhcpv6_managed | default(false) %}
+        AdvAutonomous off;
+        {% else %}
         AdvAutonomous on;
+        {% endif %}
         AdvRouterAddr off;
     };
 };

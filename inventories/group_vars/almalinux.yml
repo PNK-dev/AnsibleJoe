@@ -31,7 +31,7 @@ dhcpv6_range_end: "2025:db10:20::200"
 dhcpv6_lease_time: "3600"
 
 # Configuración IPv6
-ipv6_prefix: "2025:db10:20::/64"
+ipv6_prefix: "2025:db10:20::/120"
 radvd_interface: "ens37"
 ipv6_router_address: "2025:db10:20::1"
 
@@ -58,7 +58,7 @@ fail2ban_maxretry: 3
 
 # Redes confiables
 trusted_networks:
-  - "2025:db10:20::/64"
+  - "2025:db10:20::/120"
   - "127.0.0.0/8"
 
 # Configuración de seguridad avanzada
@@ -70,7 +70,7 @@ security_hardening:
 
 # Configuración de Suricata IDS/IPS
 suricata_mode: "ids"
-suricata_home_net: "2025:db10:20::/64,127.0.0.0/8"
+suricata_home_net: "2025:db10:20::/120,127.0.0.0/8"
 suricata_interface: "{{ ansible_default_ipv4.interface }}"
 suricata_auto_analysis_enabled: true
 suricata_auto_block_enabled: true

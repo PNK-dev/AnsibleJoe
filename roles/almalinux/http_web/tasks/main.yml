@@ -45,6 +45,16 @@
     state: enabled
     immediate: yes
 
+- name: "Abrir puerto personalizado de Apache si no es 80"
+  firewalld:
+    port: "{{ apache_port }}/tcp"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  when:
+    - apache_port is defined
+    - apache_port | int != 80
+
 - name: "Habilitar y iniciar Apache"
   systemd:
     name: httpd

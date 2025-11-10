@@ -18,11 +18,11 @@ $TTL    604800
 ; Registros A (IPv4) — omitidos en despliegue solo IPv6
 
 ; Registros AAAA (IPv6)
-servidor        IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
-almalinux       IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
-web             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
-ftp             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
-dns             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/64') | regex_replace('/64','')) ~ '1') }}
+servidor        IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/120') | regex_replace('/120','')) ~ '1') }}
+almalinux       IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/120') | regex_replace('/120','')) ~ '1') }}
+web             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/120') | regex_replace('/120','')) ~ '1') }}
+ftp             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/120') | regex_replace('/120','')) ~ '1') }}
+dns             IN      AAAA    {{ ipv6_router_address | default((ipv6_prefix | default('2001:db8:1::/120') | regex_replace('/120','')) ~ '1') }}
 
 ; Registros CNAME (alias)
 www             IN      CNAME   web.{{ network_domain }}.

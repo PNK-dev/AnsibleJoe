@@ -1,0 +1,21 @@
+---
+# Variables específicas para Rocky Linux (inventario activo)
+
+# Interfaz única para WAN y LAN
+firewall_wan_interface: "ens37"
+firewall_lan_interface: "ens37"
+
+# IPv6 / DHCPv6
+firewall_ipv6_lan_prefix: "2025:db10:20::/120"
+dhcpv6_interface: "ens37"
+dhcpv6_subnet: "2025:db10:20::/120"
+dhcpv6_pool: "2025:db10:20::10-2025:db10:20::50"
+dhcpv6_dns_servers:
+  - "2025:db10:20::1"
+
+# RA administrado (sin SLAAC adicional) y interfaz de radvd
+enable_dhcpv6_managed: true
+radvd_interface: "ens37"
+
+# Apache en puerto alternativo para evitar conflicto con nginx
+apache_port: 8080

@@ -5,15 +5,25 @@ interface {{ firewall_lan_interface }}
 {
     AdvSendAdvert on;
     MaxRtrAdvInterval 30;
-    AdvManagedFlag off;        # SLAAC (no DHCPv6 stateful)
-    AdvOtherConfigFlag off;    # Set to on if you provide other info via DHCPv6
+    {% if enable_dhcpv6_managed | default(false) %}
+    AdvManagedFlag on;        # Use DHCPv6 stateful for addresses
+    AdvOtherConfigFlag on;    # Other info via DHCPv6
+    {% else %}
+    AdvManagedFlag off;       # SLAAC
+    AdvOtherConfigFlag off;
+    {% endif %}
 
-    prefix {{ firewall_ipv6_lan_prefix }}
+    prefix {{ dhcpv6_subnet }}
     {
         AdvOnLink on;
+        {% if enable_dhcpv6_managed | default(false) %}
+        AdvAutonomous off;     # Avoid SLAAC addresses when DHCPv6 is managed
+        {% else %}
         AdvAutonomous on;      # Allow hosts to auto-configure addresses
+        {% endif %}
         AdvRouterAddr on;
     };
-
-    RDNSS 2001:4860:4860::8888 2001:4860:4860::8844 {};
+    {% if dhcpv6_dns_servers is defined and (dhcpv6_dns_servers | length) > 0 %}
+    # Optional RDNSS; when DHCPv6 managed is on, clients will get DNS via DHCPv6.
+    {% endif %}
 };

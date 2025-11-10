@@ -36,7 +36,7 @@ ipv6_allowed_services:
 firewall_wan_interface: "ens33"
 firewall_lan_interface: "ens37"
 firewall_enable_ipv6_forward: true
-firewall_ipv6_lan_prefix: "2025:db10:20::/64"
+firewall_ipv6_lan_prefix: "2025:db10:20::/120"
 firewall_enable_proyecto_so_zone: false
 
 monitoring_enabled: true

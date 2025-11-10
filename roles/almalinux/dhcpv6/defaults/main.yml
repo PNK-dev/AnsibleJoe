@@ -2,7 +2,7 @@
 # defaults for DHCPv6 (Kea)
 
 dhcpv6_interface: "ens37"
-dhcpv6_subnet: "2025:db10:20::/64"
+dhcpv6_subnet: "2025:db10:20::/120"
 dhcpv6_pool: "2025:db10:20::100-2025:db10:20::200"
 dhcpv6_dns_servers:
   - "2025:db10:20::1"

@@ -14,12 +14,70 @@
       ping:
       tags: [always]
 
+    - name: "Instalar passlib en el controlador (pip --user)"
+      ansible.builtin.command: "{{ ansible_playbook_python }} -m pip install -q passlib"
+      delegate_to: localhost
+      become: true
+      changed_when: false
+      failed_when: false
+      tags: [always]
+
+    - name: "Obtener conexión activa de ens37"
+      ansible.builtin.command: nmcli -g GENERAL.CONNECTION device show ens37
+      register: ens37_conn
+      changed_when: false
+      failed_when: false
+
+    - name: "Configurar IPv6 estática en ens37 (2025:db10:20::1/120)"
+      ansible.builtin.command: >-
+        nmcli con mod "{{ (ens37_conn.stdout | length > 0) | ternary(ens37_conn.stdout, 'ens37') }}"
+        ipv6.method manual ipv6.addresses 2025:db10:20::1/120
+      notify: restart NetworkManager
+
+    - name: "Activar conexión de ens37"
+      ansible.builtin.command: >-
+        nmcli con up "{{ (ens37_conn.stdout | length > 0) | ternary(ens37_conn.stdout, 'ens37') }}"
+      register: ens37_up
+      failed_when: false
+
+    - name: "Obtener conexión activa de ens38"
+      ansible.builtin.command: nmcli -g GENERAL.CONNECTION device show ens38
+      register: ens38_conn
+      changed_when: false
+      failed_when: false
+
+    - name: "Configurar IPv6 estática en ens38 (2025:db8:10::2/120)"
+      ansible.builtin.command: >-
+        nmcli con mod "{{ (ens38_conn.stdout | length > 0) | ternary(ens38_conn.stdout, 'ens38') }}"
+        ipv6.method manual ipv6.addresses 2025:db8:10::2/120
+      notify: restart NetworkManager
+
+    - name: "Activar conexión de ens38"
+      ansible.builtin.command: >-
+        nmcli con up "{{ (ens38_conn.stdout | length > 0) | ternary(ens38_conn.stdout, 'ens38') }}"
+      register: ens38_up
+      failed_when: false
+
+    - name: "Instalar passlib (para password_hash) via DNF"
+      dnf:
+        name: python3-passlib
+        state: present
+      register: passlib_dnf
+      ignore_errors: yes
+      tags: [always]
+
+    - name: "Instalar passlib via pip3 si falló DNF"
+      ansible.builtin.pip:
+        name: passlib
+        executable: pip3
+      when: passlib_dnf is failed
+      tags: [always]
+
   roles:
     - { role: almalinux/usuarios_almalinux, tags: [usuarios, users] }
     - { role: almalinux/common, tags: [common, base] }
     - { role: almalinux/firewall, tags: [firewall, security] }
     - { role: almalinux/router, tags: [router, network] }
-    - { role: almalinux/radvd, tags: [radvd, ipv6] }
     - { role: almalinux/http_web, tags: [http, web] }
     - { role: almalinux/ftp_vsftpd, tags: [ftp] }
     - { role: almalinux/dns_bind, tags: [dns] }
@@ -40,3 +98,9 @@
         - named
         - radvd
       tags: [verify]
+
+  handlers:
+    - name: restart NetworkManager
+      ansible.builtin.systemd:
+        name: NetworkManager
+        state: restarted

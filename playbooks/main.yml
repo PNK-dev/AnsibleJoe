@@ -1,0 +1,44 @@
+---
+# Playbook principal con verificación de SO y bootstrap de dependencias
+
+- name: "Bootstrap de dependencias en Rocky/Alma"
+  hosts: "rockylinux:almalinux"
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: "Instalar paquetes base requeridos"
+      ansible.builtin.package:
+        name:
+          - NetworkManager
+          - firewalld
+          - python3
+          - python3-pip
+          - policycoreutils-python-utils
+        state: present
+
+    - name: "Habilitar y arrancar NetworkManager"
+      ansible.builtin.systemd:
+        name: NetworkManager
+        enabled: yes
+        state: started
+
+    - name: "Habilitar y arrancar firewalld"
+      ansible.builtin.systemd:
+        name: firewalld
+        enabled: yes
+        state: started
+
+    - name: "Asegurar passlib en el controlador"
+      ansible.builtin.command: "{{ ansible_playbook_python }} -m pip install -q passlib"
+      delegate_to: localhost
+      become: true
+      changed_when: false
+      failed_when: false
+
+- name: "Configuración de Rocky Linux - Servicios de Red"
+  import_playbook: rockylinux.yml
+  when: "'rockylinux' in groups"
+
+- name: "Configuración de AlmaLinux - Servicios de Red"
+  import_playbook: almalinux.yml
+  when: "'almalinux' in groups"
