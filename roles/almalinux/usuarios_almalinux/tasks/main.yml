@@ -10,6 +10,8 @@
     - devs
     - security
     - audit
+    - profesores
+    - estudiantes
 
 - name: "Crear usuario admin (privilegios totales)"
   user:
@@ -30,6 +32,26 @@
     shell: /bin/bash
     create_home: true
     password: "{{ (vault_almalinux_passwords.tech | default('Tech2025!')) | password_hash('sha512') }}"
+
+- name: "Crear usuario profesor (sin sudo)"
+  user:
+    name: profesor
+    comment: "Profesor - sin sudo"
+    groups: profesores
+    append: true
+    shell: /bin/bash
+    create_home: true
+    password: "{{ (vault_almalinux_passwords.profesor | default('Prof2025!')) | password_hash('sha512') }}"
+
+- name: "Crear usuario estudiante (sin sudo)"
+  user:
+    name: estudiante
+    comment: "Estudiante - sin sudo"
+    groups: estudiantes
+    append: true
+    shell: /bin/bash
+    create_home: true
+    password: "{{ (vault_almalinux_passwords.estudiante | default('Est2025!')) | password_hash('sha512') }}"
 
 - name: "Crear usuario dev (acceso medio)"
   user:
@@ -107,6 +129,16 @@
     path: /etc/sudoers.d/auditor
     state: absent
 
+- name: "Quitar sudo a profesor (asegurar sin permisos)"
+  file:
+    path: /etc/sudoers.d/profesor
+    state: absent
+
+- name: "Quitar sudo a estudiante (asegurar sin permisos)"
+  file:
+    path: /etc/sudoers.d/estudiante
+    state: absent
+
 - name: "Asegurar permisos 0700 en home"
   file:
     path: "/home/{{ item }}"
@@ -114,6 +146,8 @@
   loop:
     - admin
     - tech
+    - profesor
+    - estudiante
     - dev
     - security
     - auditor
